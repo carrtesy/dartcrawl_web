@@ -1,0 +1,250 @@
+:root {
+  --bg: #f4efe5;
+  --paper: rgba(255, 251, 245, 0.82);
+  --paper-strong: #fffaf2;
+  --ink: #1c1915;
+  --muted: #675f54;
+  --line: rgba(28, 25, 21, 0.12);
+  --accent: #9f3d24;
+  --accent-strong: #7d2f1b;
+  --accent-soft: #f1d8c4;
+  --shadow: 0 18px 48px rgba(84, 51, 29, 0.12);
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(205, 120, 82, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(128, 167, 141, 0.18), transparent 24%),
+    linear-gradient(180deg, #f3eadc 0%, #efe8dc 42%, #ebe3d5 100%);
+}
+
+.page-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 56px;
+}
+
+.hero {
+  padding: 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(135deg, rgba(255, 247, 236, 0.95), rgba(245, 233, 214, 0.88)),
+    var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.eyebrow,
+.panel-kicker {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.hero h1,
+.panel h2 {
+  margin: 0;
+  line-height: 1.05;
+}
+
+.hero h1 {
+  font-size: clamp(2.4rem, 4vw, 4.7rem);
+  max-width: 12ch;
+}
+
+.hero-copy {
+  max-width: 60ch;
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.7;
+}
+
+.hero-cards,
+.content-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.hero-cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 30px;
+}
+
+.mini-card,
+.panel,
+.status-card,
+.note {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+}
+
+.mini-card {
+  padding: 18px;
+  border-radius: var(--radius-lg);
+}
+
+.mini-card strong,
+.status-card strong,
+.note strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.mini-card span,
+.status-card p,
+.note p,
+.field small,
+.steps {
+  color: var(--muted);
+}
+
+.content-grid {
+  grid-template-columns: 1.2fr 0.8fr;
+  margin-top: 22px;
+}
+
+.panel {
+  padding: 28px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+}
+
+.export-form {
+  display: grid;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.field {
+  display: grid;
+  gap: 10px;
+}
+
+.field span {
+  font-weight: 700;
+}
+
+.field input {
+  width: 100%;
+  border: 1px solid rgba(28, 25, 21, 0.16);
+  border-radius: var(--radius-md);
+  background: var(--paper-strong);
+  padding: 15px 16px;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.field input:focus {
+  outline: 2px solid rgba(159, 61, 36, 0.2);
+  border-color: rgba(159, 61, 36, 0.5);
+}
+
+.field small {
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 20px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    background 180ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+  transform: none;
+}
+
+button[type="submit"] {
+  background: var(--accent);
+  color: #fff9f4;
+}
+
+button[type="submit"]:hover {
+  background: var(--accent-strong);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid rgba(159, 61, 36, 0.24);
+}
+
+.status-card {
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+}
+
+.status-card.is-busy {
+  background: rgba(255, 240, 221, 0.88);
+}
+
+.status-card.is-success {
+  background: rgba(231, 244, 229, 0.9);
+}
+
+.status-card.is-error {
+  background: rgba(255, 231, 228, 0.92);
+}
+
+.steps {
+  margin: 22px 0;
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+.note {
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  margin-top: 16px;
+}
+
+@media (max-width: 860px) {
+  .hero-cards,
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero,
+  .panel {
+    padding: 24px;
+  }
+}

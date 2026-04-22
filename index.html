@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>DART 표 엑셀 변환기</title>
+    <meta
+      name="description"
+      content="DART 사업보고서 링크를 넣으면 상세표를 엑셀 파일로 내려받는 GitHub Pages용 화면입니다."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <p class="eyebrow">DARTCRAWL WEB</p>
+        <h1>DART 보고서 링크를<br />엑셀 파일로 정리합니다.</h1>
+        <p class="hero-copy">
+          DART 사업보고서 URL을 붙여 넣으면 서버리스 API가 상세표를 읽고
+          Excel 파일로 내려줍니다. 화면은 GitHub Pages에, 수집은 Worker에 두는
+          구조를 전제로 만들었습니다.
+        </p>
+        <div class="hero-cards">
+          <div class="mini-card">
+            <strong>입력</strong>
+            <span>`main.do?rcpNo=...` 형식의 DART 링크</span>
+          </div>
+          <div class="mini-card">
+            <strong>출력</strong>
+            <span>여러 시트를 가진 Excel XML `.xls` 파일</span>
+          </div>
+          <div class="mini-card">
+            <strong>대상 표</strong>
+            <span>연결대상 종속회사, 계열회사, 타법인출자 현황</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="content-grid">
+        <section class="panel panel-form">
+          <div class="panel-head">
+            <p class="panel-kicker">Export</p>
+            <h2>엑셀 내보내기</h2>
+          </div>
+
+          <form id="export-form" class="export-form">
+            <label class="field">
+              <span>DART 보고서 URL</span>
+              <input
+                id="report-url"
+                name="reportUrl"
+                type="url"
+                inputmode="url"
+                placeholder="https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20250312001148"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span>API 엔드포인트</span>
+              <input
+                id="api-endpoint"
+                name="apiEndpoint"
+                type="url"
+                inputmode="url"
+                placeholder="https://your-worker.workers.dev/api/export"
+              />
+              <small>
+                비워두면 현재 사이트의 `/api/export`로 요청합니다.
+                GitHub Pages에서는 보통 Worker 주소를 넣어야 합니다.
+              </small>
+            </label>
+
+            <div class="actions">
+              <button id="submit-button" type="submit">엑셀 다운로드</button>
+              <button id="sample-button" type="button" class="ghost">
+                샘플 링크 넣기
+              </button>
+            </div>
+          </form>
+
+          <div id="status-card" class="status-card" aria-live="polite">
+            <strong>준비됨</strong>
+            <p>보고서 URL과 API 주소를 넣고 내려받기를 실행하세요.</p>
+          </div>
+        </section>
+
+        <section class="panel panel-info">
+          <div class="panel-head">
+            <p class="panel-kicker">How It Works</p>
+            <h2>동작 방식</h2>
+          </div>
+
+          <ol class="steps">
+            <li>프런트엔드가 Worker에 DART 링크를 전달합니다.</li>
+            <li>Worker가 DART 본문과 상세표 HTML을 가져옵니다.</li>
+            <li>필요한 표를 정리해 Excel 파일로 응답합니다.</li>
+          </ol>
+
+          <div class="note">
+            <strong>왜 Worker가 필요하나</strong>
+            <p>
+              GitHub Pages는 정적 사이트라 브라우저에서 DART를 직접 읽을 때
+              CORS 제한을 받습니다. 그래서 DART 요청은 별도 서버리스에서
+              처리해야 합니다.
+            </p>
+          </div>
+
+          <div class="note">
+            <strong>지원 링크</strong>
+            <p>
+              현재는 `https://dart.fss.or.kr/dsaf001/main.do?rcpNo=...`
+              형식의 사업보고서 링크를 기준으로 만들었습니다.
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
