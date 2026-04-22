@@ -46,6 +46,11 @@ Cloudflare Workers 기준 예시입니다.
 1. `worker/` 폴더를 별도 프로젝트로 배포합니다.
 2. 배포 후 생성된 URL의 `/api/export`를 GitHub Pages 화면에 넣습니다.
 
+이 저장소에는 GitHub Actions용 Worker 배포 워크플로도 포함되어 있습니다.
+
+- 워크플로: `.github/workflows/deploy-worker.yml`
+- 설정 가이드: [CLOUDFLARE_SETUP.md](C:/Users/osa66/ChatChinese/dartcrawl-web/CLOUDFLARE_SETUP.md)
+
 헬스체크:
 
 - `GET /api/health`
