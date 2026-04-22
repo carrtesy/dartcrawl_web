@@ -2,6 +2,10 @@
 
 GitHub Pages에 올릴 정적 프런트엔드와, DART 본문을 대신 읽어 줄 서버리스 Worker 초안입니다.
 
+프로젝트 페이지 기준 목표 주소:
+
+- `https://carrtesy.github.io/dartcrawl_web/`
+
 ## 구성
 
 - `index.html`, `styles.css`, `app.js`
@@ -22,15 +26,17 @@ GitHub Pages는 정적 호스팅이라 브라우저에서 `https://dart.fss.or.k
 
 정적 파일은 루트 그대로 GitHub Pages에 배포하면 됩니다.
 
+이 저장소에는 `.github/workflows/deploy-pages.yml`이 포함되어 있어서, GitHub 저장소 이름을 `dartcrawl_web`로 만들고 `main` 브랜치에 푸시하면 Pages 배포에 바로 사용할 수 있습니다.
+
 ### 사용 방법
 
 1. `index.html`, `styles.css`, `app.js`를 GitHub Pages에 올립니다.
 2. 사이트를 열고 `API 엔드포인트`에 Worker 주소를 넣습니다.
 3. DART 사업보고서 URL을 붙여 넣고 `엑셀 다운로드`를 누릅니다.
 
-예시:
+현재 목표 예시:
 
-- 페이지 주소: `https://<user>.github.io/<repo>/`
+- 페이지 주소: `https://carrtesy.github.io/dartcrawl_web/`
 - Worker 주소: `https://dartcrawl-export-worker.<subdomain>.workers.dev/api/export`
 
 ## Worker 배포
