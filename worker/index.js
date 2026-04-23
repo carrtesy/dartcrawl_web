@@ -1,5 +1,7 @@
-const MAIN_URL = "https://dart.fss.or.kr/dsaf001/main.do";
-const VIEWER_URL = "https://dart.fss.or.kr/report/viewer.do";
+const BASE_URL = "https://dart.fss.or.kr";
+const MAIN_URL = `${BASE_URL}/dsaf001/main.do`;
+const VIEWER_URL = `${BASE_URL}/report/viewer.do`;
+const SEARCH_URL = `${BASE_URL}/dsab007/detailSearch.ax`;
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36";
 
@@ -37,6 +39,25 @@ export default {
       );
     }
 
+    if (request.method === "POST" && url.pathname === "/api/search-companies") {
+      try {
+        const body = await request.json();
+        const keyword = typeof body.keyword === "string" ? body.keyword.trim() : "";
+
+        if (!keyword) {
+          return json({ error: "keyword가 비어 있습니다." }, 400);
+        }
+
+        const items = await searchCompanies(keyword);
+        return json({ items }, 200);
+      } catch (error) {
+        return json(
+          { error: error instanceof Error ? error.message : "기업 검색 중 오류가 발생했습니다." },
+          500
+        );
+      }
+    }
+
     if (request.method === "POST" && url.pathname === "/api/export") {
       try {
         const body = await request.json();
@@ -46,28 +67,18 @@ export default {
           return json({ error: "reportUrl이 비어 있습니다." }, 400);
         }
 
-        if (!/^https:\/\/dart\.fss\.or\.kr\/dsaf001\/main\.do\?rcpNo=\d+/.test(reportUrl)) {
+        if (!looksLikeDartReportUrl(reportUrl)) {
           return json(
             { error: "DART 사업보고서 링크 형식이 아닙니다. main.do?rcpNo=... 형식을 넣어주세요." },
             400
           );
         }
 
-        const workbookXml = await buildWorkbookFromReportUrl(reportUrl);
-        const fileName = buildFileName(reportUrl);
-
-        return new Response(workbookXml, {
-          status: 200,
-          headers: {
-            ...corsHeaders(),
-            "content-type": "application/vnd.ms-excel; charset=utf-8",
-            "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,
-            "cache-control": "no-store",
-          },
-        });
+        const files = await buildFilesFromReportUrl(reportUrl);
+        return json({ files }, 200);
       } catch (error) {
         return json(
-          { error: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다." },
+          { error: error instanceof Error ? error.message : "엑셀 생성 중 오류가 발생했습니다." },
           500
         );
       }
@@ -76,25 +87,61 @@ export default {
     return json(
       {
         ok: true,
-        message: "POST /api/export 로 reportUrl을 보내면 Excel 파일을 반환합니다.",
+        message: "POST /api/search-companies 또는 POST /api/export 를 사용하세요.",
       },
       200
     );
   },
 };
 
-async function buildWorkbookFromReportUrl(reportUrl) {
+async function searchCompanies(keyword) {
+  const payload = {
+    currentPage: "1",
+    maxResults: "20",
+    maxLinks: "10",
+    sort: "",
+    series: "",
+    textCrpCik: "",
+    lateKeyword: "",
+    keyword: "",
+    reportNamePopYn: "",
+    textkeyword: "",
+    businessCode: "all",
+    autoSearch: "N",
+    option: "corp",
+    textCrpNm: keyword,
+    textCrpNm2: keyword,
+    reportName: "사업보고서",
+    reportName2: "사업보고서",
+    tocSrch: "",
+    tocSrch2: "",
+    textPresenterNm: "",
+    startDate: "20240101",
+    endDate: formatDateYYYYMMDD(new Date()),
+    finalReport: "recent",
+    corporationType: "all",
+    closingAccountsMonth: "all",
+    publicType: "A001",
+  };
+
+  const html = await postFormText(SEARCH_URL, payload, `${BASE_URL}/dsab007/main.do?option=corp`);
+  return parseSearchResults(html);
+}
+
+async function buildFilesFromReportUrl(reportUrl) {
   const rcpNo = extractRcpNo(reportUrl);
   const mainHtml = await fetchText(MAIN_URL, { rcpNo });
   const detailNode = getDetailNode(mainHtml);
   const detailHtml = await fetchText(VIEWER_URL, detailNode);
   const sheets = extractTargetTables(detailHtml);
-  return workbookXml(sheets);
+  return TARGET_SECTIONS.map(({ key, sheetName }) => ({
+    name: `${key}.xls`,
+    content: singleSheetWorkbookXml(sheetName, sheets.get(sheetName)),
+  }));
 }
 
 async function fetchText(url, params) {
   const targetUrl = new URL(url);
-
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       targetUrl.searchParams.set(key, value);
@@ -112,6 +159,91 @@ async function fetchText(url, params) {
   }
 
   return response.text();
+}
+
+async function postFormText(url, data, referer) {
+  const body = new URLSearchParams();
+  for (const [key, value] of Object.entries(data)) {
+    body.set(key, value);
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "user-agent": USER_AGENT,
+      referer,
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    throw new Error(`DART 검색 요청 실패: ${response.status} ${response.statusText}`);
+  }
+
+  return response.text();
+}
+
+function parseSearchResults(html) {
+  const tbodyMatch = html.match(/<tbody[^>]*id=['"]tbody['"][^>]*>([\s\S]*?)<\/tbody>/i);
+  const tbodyHtml = tbodyMatch ? tbodyMatch[1] : html;
+  const rowPattern = /<tr\b[^>]*>([\s\S]*?)<\/tr>/gi;
+  const items = [];
+  const seenCompanies = new Set();
+  let rowMatch;
+
+  while ((rowMatch = rowPattern.exec(tbodyHtml)) !== null) {
+    const cells = extractCellHtml(rowMatch[1]);
+    if (cells.length < 3) {
+      continue;
+    }
+
+    const companyName = cleanInlineHtml(cells[1]);
+    const reportCell = cells[2];
+    const reportTitle = cleanInlineHtml(reportCell);
+    const reportHrefMatch = reportCell.match(/href=['"]([^'"]*\/dsaf001\/main\.do\?rcpNo=\d+[^'"]*)['"]/i);
+
+    if (!companyName || !reportHrefMatch) {
+      continue;
+    }
+
+    if (!reportTitle.includes("사업보고서")) {
+      continue;
+    }
+
+    if (reportTitle.includes("[기재정정]")) {
+      continue;
+    }
+
+    if (seenCompanies.has(companyName)) {
+      continue;
+    }
+
+    seenCompanies.add(companyName);
+    items.push({
+      companyName,
+      reportTitle,
+      reportUrl: new URL(reportHrefMatch[1], BASE_URL).toString(),
+    });
+  }
+
+  return items;
+}
+
+function extractCellHtml(rowHtml) {
+  const cells = [];
+  const pattern = /<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi;
+  let match;
+
+  while ((match = pattern.exec(rowHtml)) !== null) {
+    cells.push(match[1]);
+  }
+
+  return cells;
+}
+
+function looksLikeDartReportUrl(reportUrl) {
+  return /^https:\/\/dart\.fss\.or\.kr\/dsaf001\/main\.do\?rcpNo=\d+/.test(reportUrl);
 }
 
 function extractRcpNo(reportUrl) {
@@ -165,8 +297,7 @@ function normalizeTitle(text) {
 }
 
 function extractTargetTables(detailHtml) {
-  const sectionPattern =
-    /<p[^>]*class=['"]section-2['"][^>]*>([\s\S]*?)<\/p>/gi;
+  const sectionPattern = /<p[^>]*class=['"]section-2['"][^>]*>([\s\S]*?)<\/p>/gi;
   const sections = [];
   let match;
 
@@ -183,7 +314,10 @@ function extractTargetTables(detailHtml) {
   for (let index = 0; index < sections.length; index += 1) {
     const current = sections[index];
     const next = sections[index + 1];
-    const segment = detailHtml.slice(current.endIndex, next ? next.startIndex : detailHtml.length);
+    const segment = detailHtml.slice(
+      current.endIndex,
+      next ? next.startIndex : detailHtml.length
+    );
     const tableHtml = findFirstDataTable(segment);
     if (!tableHtml) {
       continue;
@@ -191,7 +325,6 @@ function extractTargetTables(detailHtml) {
 
     const normalized = normalizeTitle(current.title);
     const target = TARGET_SECTIONS.find((item) => normalized.includes(item.key));
-
     if (target) {
       extracted.set(target.sheetName, tableToMatrix(tableHtml));
     }
@@ -314,27 +447,15 @@ function decodeHtmlEntities(value) {
     .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)));
 }
 
-function workbookXml(sheets) {
-  const worksheetXml = [];
-
-  for (const [sheetName, rows] of sheets.entries()) {
-    const lines = rows
-      .map((row) => {
-        const cells = row
-          .map(
-            (value) =>
-              `<Cell><Data ss:Type="String">${escapeXml(value)}</Data></Cell>`
-          )
-          .join("");
-
-        return `<Row>${cells}</Row>`;
-      })
-      .join("");
-
-    worksheetXml.push(
-      `<Worksheet ss:Name="${escapeXml(sheetName)}"><Table>${lines}</Table></Worksheet>`
-    );
-  }
+function singleSheetWorkbookXml(sheetName, rows) {
+  const lines = rows
+    .map((row) => {
+      const cells = row
+        .map((value) => `<Cell><Data ss:Type="String">${escapeXml(value)}</Data></Cell>`)
+        .join("");
+      return `<Row>${cells}</Row>`;
+    })
+    .join("");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
@@ -347,7 +468,7 @@ function workbookXml(sheets) {
 <Author>DART Crawl Worker</Author>
 <Created>${new Date().toISOString()}</Created>
 </DocumentProperties>
-${worksheetXml.join("")}
+<Worksheet ss:Name="${escapeXml(sheetName)}"><Table>${lines}</Table></Worksheet>
 </Workbook>`;
 }
 
@@ -359,9 +480,12 @@ function escapeXml(value) {
     .replaceAll('"', "&quot;");
 }
 
-function buildFileName(reportUrl) {
-  const rcpNo = extractRcpNo(reportUrl);
-  return `dart-detail-tables-${rcpNo}.xls`;
+
+function formatDateYYYYMMDD(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
 }
 
 function corsHeaders() {

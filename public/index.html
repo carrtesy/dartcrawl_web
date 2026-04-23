@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Dartcrawler</title>
+    <meta name="description" content="DART 기업 검색과 사업보고서 엑셀 추출" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand-mark" aria-label="Dartcrawler 로고">Dartcrawler</div>
+    </header>
+    <nav id="panel-tabs" class="panel-tabs" aria-label="화면 전환">
+      <button type="button" class="tab-btn is-active" data-tab="search">검색</button>
+      <button type="button" class="tab-btn" data-tab="export">엑셀 다운로드</button>
+    </nav>
+    <main class="page-shell">
+      <section class="search-panel">
+        <div class="search-header">
+          <form id="search-form" class="search-form">
+            <div class="search-input-wrap">
+              <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                id="keyword-input"
+                name="keyword"
+                type="search"
+                inputmode="search"
+                placeholder="기업명 입력"
+                autocomplete="off"
+                required
+              />
+            </div>
+          </form>
+          <div id="status-card" class="status-card" aria-live="polite">
+            <strong>검색어를 입력하세요.</strong>
+            <p>입력할 때마다 기업 리스트를 바로 불러옵니다.</p>
+          </div>
+        </div>
+        <ul id="results-list" class="results-list"></ul>
+      </section>
+
+      <section class="export-panel">
+        <div id="export-idle" class="export-idle">
+          <p>왼쪽에서 기업을 클릭하면<br />사업보고서 링크가 여기에 나타납니다.</p>
+        </div>
+        <div id="selected-card" class="selected-card is-hidden">
+          <div class="selected-copy">
+            <strong id="selected-company"></strong>
+            <span id="selected-report-title"></span>
+          </div>
+          <div class="url-row">
+            <input
+              id="report-url"
+              type="url"
+              readonly
+              placeholder="사업보고서 링크"
+            />
+            <a id="report-url-link" class="goto-btn is-hidden" href="#" target="_blank" rel="noopener noreferrer" title="새 탭에서 열기">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </a>
+          </div>
+          <button id="download-button" type="button">엑셀 다운로드</button>
+          <div id="download-status" class="status-card" aria-live="polite"></div>
+          <div id="file-list" class="file-list"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+    <footer class="site-footer">
+      <span>© 2026 Dongmin Kim</span>
+      <a href="https://www.linkedin.com/in/dongmin-kim-7056aa182/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      <a href="https://github.com/carrtesy" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </footer>
+  </body>
+</html>

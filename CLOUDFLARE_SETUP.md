@@ -1,81 +1,92 @@
-# Cloudflare Worker 배포
+# Cloudflare 배포 가이드
 
-이 프로젝트의 실제 엑셀 변환은 `worker/` 폴더의 Cloudflare Worker가 담당합니다.
+이 프로젝트는 Cloudflare Workers Static Assets 방식으로 배포합니다.
+
+즉:
+
+- `public/`은 정적 사이트로 배포
+- `src/index.js`와 `worker/index.js`는 API Worker로 배포
+
+둘 다 `wrangler deploy` 한 번으로 같이 올라갑니다.
 
 ## 1. Cloudflare에서 준비할 것
-
-Cloudflare 계정이 있어야 합니다.
 
 필요한 값:
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 
-## 2. GitHub 저장소에 Secrets 넣기
+## 2. GitHub Actions Secrets 설정
 
-저장소 `carrtesy/dartcrawl_web`에서 아래 위치로 들어갑니다.
+저장소 `carrtesy/dartcrawl_web`에서:
 
 - `Settings > Secrets and variables > Actions`
 
-추가할 Repository secrets:
+아래 secrets를 추가합니다.
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 
-## 3. Worker 이름 확인
+## 3. 앱 이름 확인
 
-현재 [worker/wrangler.toml](C:/Users/osa66/ChatChinese/dartcrawl-web/worker/wrangler.toml)의 이름은 아래와 같습니다.
+현재 루트 [wrangler.toml](C:/Users/osa66/ChatChinese/dartcrawl-web/wrangler.toml) 설정:
 
 ```toml
-name = "dartcrawl-export-worker"
+name = "dartcrawl-web"
+main = "src/index.js"
+
+[assets]
+directory = "./public"
+run_worker_first = ["/api/*"]
 ```
 
-배포되면 기본 주소는 대체로 아래 형태입니다.
+배포 후 기본 주소는 대체로 아래 형태입니다.
 
 ```text
-https://dartcrawl-export-worker.<your-subdomain>.workers.dev
+https://dartcrawl-web.<your-subdomain>.workers.dev
 ```
 
-실제 API 주소는:
+예시 경로:
 
-```text
-https://dartcrawl-export-worker.<your-subdomain>.workers.dev/api/export
-```
-
-헬스체크 주소는:
-
-```text
-https://dartcrawl-export-worker.<your-subdomain>.workers.dev/api/health
-```
+- 메인 화면: `https://dartcrawl-web.<your-subdomain>.workers.dev/`
+- 검색 API: `https://dartcrawl-web.<your-subdomain>.workers.dev/api/search-companies`
+- 엑셀 API: `https://dartcrawl-web.<your-subdomain>.workers.dev/api/export`
 
 ## 4. GitHub Actions로 배포
 
 저장소 `Actions` 탭에서:
 
-1. `Deploy Cloudflare Worker` 워크플로 선택
+1. `Deploy Cloudflare App` 워크플로 선택
 2. `Run workflow` 실행
 
-또는 `worker/` 아래 파일을 수정해서 `main`에 푸시해도 자동 배포됩니다.
+또는 아래 파일들이 바뀐 채로 `main`에 푸시되면 자동 배포됩니다.
 
-## 5. GitHub Pages 화면에 연결
+- `public/**`
+- `src/**`
+- `worker/**`
+- `wrangler.toml`
 
-배포가 끝나면 아래 페이지로 접속합니다.
+## 5. 로컬 실행
 
-```text
-https://carrtesy.github.io/dartcrawl_web/
+Cloudflare 방식 전체를 보려면:
+
+```bash
+wrangler dev
 ```
 
-그리고 `API 엔드포인트` 칸에 다음 형식의 주소를 넣습니다.
+브라우저:
 
 ```text
-https://dartcrawl-export-worker.<your-subdomain>.workers.dev/api/export
+http://127.0.0.1:8787
 ```
 
-## 6. 동작 확인
+## 6. 헬스체크
 
-먼저 브라우저에서 헬스체크를 확인합니다.
+먼저 아래 주소를 열어 Worker가 정상인지 확인합니다.
 
-- `GET /api/health`
+```text
+https://dartcrawl-web.<your-subdomain>.workers.dev/api/health
+```
 
 정상 예시:
 
@@ -86,9 +97,7 @@ https://dartcrawl-export-worker.<your-subdomain>.workers.dev/api/export
 }
 ```
 
-그다음 GitHub Pages 화면에서 DART 보고서 링크를 넣고 엑셀 다운로드를 시도하면 됩니다.
-
 ## 참고
 
-- 이 환경에서는 `wrangler`가 설치되어 있지 않아 로컬에서 바로 배포하지는 못했습니다.
-- 대신 GitHub Actions로 배포할 수 있게 워크플로를 추가했습니다.
+- 이 환경에는 `wrangler`가 설치되어 있지 않아 여기서 직접 Cloudflare 배포까지 실행하지는 못했습니다.
+- 대신 GitHub Actions에서 바로 배포할 수 있게 워크플로를 맞춰두었습니다.
